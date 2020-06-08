@@ -14,6 +14,7 @@ function createItemRef(galleryItem, index) {
   const item = document.createElement('li');
   item.classList.add('gallery__item');
   const link = document.createElement('a');
+  // link.dataset.index = index;
   link.classList.add('gallery__link');
   link.href = galleryItem.original;
   const img = document.createElement('img');
@@ -28,24 +29,39 @@ function createItemRef(galleryItem, index) {
 }
 
 function createGallery(items) {
-  const itemsRef = [];
-  let index = 0;
-  items.map(item => {
-    itemsRef.push(createItemRef(item, index));
-    index += 1;
-    return itemsRef;
+  const itemsRef = items.map((item, index) => {
+    return createItemRef(item, index);
   });
+
   refs.gallery.append(...itemsRef);
 }
 window.onload = createGallery(galleryItems);
 
-function onOpenModal() {
-  window.addEventListener('keydown', event => {
-    if (event.code === 'Escape') {
-      onCloseModal();
-    }
-  });
+function onArrowClick(event) {
+  let currentIndex = Number(refs.modalImage.dataset.index);
 
+  if (event.code === 'ArrowLeft') {
+    if (currentIndex > 0) {
+      currentIndex -= 1;
+      refs.modalImage.src = galleryItems[currentIndex].original;
+      refs.modalImage.alt = galleryItems[currentIndex].description;
+      refs.modalImage.dataset.index = currentIndex;
+    }
+  }
+
+  if (currentIndex < galleryItems.length - 1) {
+    if (event.code === 'ArrowRight') {
+      currentIndex += 1;
+      refs.modalImage.src = galleryItems[currentIndex].original;
+      refs.modalImage.alt = galleryItems[currentIndex].description;
+      refs.modalImage.dataset.index = currentIndex;
+    }
+  }
+}
+
+function onOpenModal() {
+  window.addEventListener('keydown', onCloseEvent);
+  window.addEventListener('keydown', onArrowClick);
   refs.modal.classList.add('is-open');
 }
 
@@ -54,6 +70,8 @@ function onCloseModal() {
   refs.modalImage.alt = '';
   refs.modalImage.dataset.index = '';
   refs.modal.classList.remove('is-open');
+  window.removeEventListener('keydown', onCloseEvent);
+  window.removeEventListener('keydown', onArrowClick);
 }
 
 function onGalleryClick(event) {
@@ -62,50 +80,26 @@ function onGalleryClick(event) {
     return;
   }
   const largeImageUrl = event.target.dataset.source;
-  let currentIndex = Number(event.target.dataset.index);
+  const currentIndex = Number(event.target.dataset.index);
   const imgDescription = event.target.alt;
-  onOpenModal();
 
   refs.modalImage.src = largeImageUrl;
   refs.modalImage.alt = imgDescription;
   refs.modalImage.dataset.index = currentIndex;
-
-  window.addEventListener('keydown', e => {
-    if (e.code === 'ArrowLeft') {
-      if (currentIndex >= 0) {
-        currentIndex -= 1;
-        for (let i = 0; i < galleryItems.length; i += 1) {
-          if (i === currentIndex) {
-            refs.modalImage.src = galleryItems[i].original;
-            refs.modalImage.alt = galleryItems[i].description;
-            refs.modalImage.dataset.index = currentIndex;
-          }
-        }
-      }
-    }
-  });
-  window.addEventListener('keydown', e => {
-    if (currentIndex <= galleryItems.length) {
-      if (e.code === 'ArrowRight') {
-        currentIndex += 1;
-        for (let i = 0; i < galleryItems.length; i += 1) {
-          if (i === currentIndex) {
-            refs.modalImage.src = galleryItems[i].original;
-            refs.modalImage.alt = galleryItems[i].description;
-            refs.modalImage.dataset.index = currentIndex;
-          }
-        }
-      }
-    }
-  });
+  onOpenModal();
 }
 
-function onModalClick(event) {
-  if (event.target === event.currentTarget) {
+const onCloseEvent = event => {
+  if (event.target === refs.modalButton) {
     onCloseModal();
   }
-}
+  if (event.target === refs.overlayBox) {
+    onCloseModal();
+  }
+  if (event.code === 'Escape') {
+    onCloseModal();
+  }
+};
 
 refs.gallery.addEventListener('click', onGalleryClick);
-refs.modalButton.addEventListener('click', onCloseModal);
-refs.overlayBox.addEventListener('click', onModalClick);
+refs.modal.addEventListener('click', onCloseEvent);
